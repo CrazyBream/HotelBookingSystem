@@ -1,0 +1,42 @@
+﻿@model LoginDto
+@{
+    ViewData["Title"] = "Вхід";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="mb-3 text-center">Вхід у систему</h3>
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" class="form-control" placeholder="name@example.ua" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Пароль</label>
+                        <input asp-for="Password" type="password" class="form-control" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">Увійти</button>
+                </form>
+
+                <hr class="my-4" />
+                <div class="small text-muted">
+                    <div class="fw-semibold mb-1">Тестові акаунти (пароль: <code>Password123!</code>):</div>
+                    <div>Адмін: <code>admin@hotelchain.ua</code></div>
+                    <div>Рецепція: <code>kyiv.desk@hotelchain.ua</code></div>
+                    <div>Аналітик: <code>analyst@hotelchain.ua</code></div>
+                    <div>Гість: <code>o.kovalenko@example.ua</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

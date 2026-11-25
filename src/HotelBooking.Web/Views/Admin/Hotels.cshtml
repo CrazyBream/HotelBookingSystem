@@ -1,0 +1,220 @@
+﻿@model AdminHotelsViewModel
+@{
+    ViewData["Title"] = "Керування готелями та номерами";
+    var roomStatuses = new[] { "available", "occupied", "maintenance", "inactive" };
+}
+
+<h2 class="mb-4">Керування готелями та номерним фондом</h2>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Додати новий готель</div>
+            <div class="card-body">
+                <form asp-action="CreateHotel" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-2 mb-2">
+                        <div class="col-4">
+                            <label asp-for="NewHotel.HotelCode" class="form-label small">Код</label>
+                            <input asp-for="NewHotel.HotelCode" class="form-control form-control-sm" placeholder="HTL-KHARK-01" required />
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="NewHotel.Name" class="form-label small">Назва</label>
+                            <input asp-for="NewHotel.Name" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-2">
+                            <label asp-for="NewHotel.StarRating" class="form-label small">Зірки</label>
+                            <input asp-for="NewHotel.StarRating" type="number" min="1" max="5" class="form-control form-control-sm" required />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-4">
+                            <label asp-for="NewHotel.Country" class="form-label small">Країна</label>
+                            <input asp-for="NewHotel.Country" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-4">
+                            <label asp-for="NewHotel.City" class="form-label small">Місто</label>
+                            <input asp-for="NewHotel.City" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-4">
+                            <label asp-for="NewHotel.Phone" class="form-label small">Телефон</label>
+                            <input asp-for="NewHotel.Phone" class="form-control form-control-sm" placeholder="+380..." required />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label asp-for="NewHotel.Address" class="form-label small">Адреса</label>
+                            <input asp-for="NewHotel.Address" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="NewHotel.Email" class="form-label small">Email</label>
+                            <input asp-for="NewHotel.Email" type="email" class="form-control form-control-sm" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewHotel.Description" class="form-label small">Опис</label>
+                        <textarea asp-for="NewHotel.Description" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Створити готель</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Додати новий номер</div>
+            <div class="card-body">
+                <form asp-action="CreateRoom" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label asp-for="NewRoom.HotelId" class="form-label small">Готель</label>
+                            <select asp-for="NewRoom.HotelId" class="form-select form-select-sm" required>
+                                @foreach (var h in Model.Hotels)
+                                {
+                                    <option value="@h.Id">@h.Name (@h.City)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="NewRoom.CategoryId" class="form-label small">Категорія</label>
+                            <select asp-for="NewRoom.CategoryId" class="form-select form-select-sm" required>
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <option value="@c.Id">@c.Name — @c.BasePrice.ToString("N0") грн (до @c.MaxGuests г.)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-4">
+                            <label asp-for="NewRoom.RoomNumber" class="form-label small">Номер</label>
+                            <input asp-for="NewRoom.RoomNumber" class="form-control form-control-sm" placeholder="401" required />
+                        </div>
+                        <div class="col-4">
+                            <label asp-for="NewRoom.Floor" class="form-label small">Поверх</label>
+                            <input asp-for="NewRoom.Floor" type="number" min="0" max="100" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-4">
+                            <label asp-for="NewRoom.Status" class="form-label small">Статус</label>
+                            <select asp-for="NewRoom.Status" class="form-select form-select-sm">
+                                @foreach (var st in roomStatuses)
+                                {
+                                    <option value="@st">@st</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="NewRoom.Description" class="form-label small">Опис номера</label>
+                        <input asp-for="NewRoom.Description" class="form-control form-control-sm" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small d-block">Зручності</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach (var a in Model.Amenities)
+                            {
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="checkbox" name="NewRoom.AmenityIds" value="@a.Id" id="am_@a.Id" />
+                                    <label class="form-check-label small" for="am_@a.Id">@a.Name</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm">Створити номер</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Готелі (@Model.Hotels.Count)</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Код</th>
+                    <th>Назва</th>
+                    <th>Місто / Адреса</th>
+                    <th>Контакти</th>
+                    <th>Статус</th>
+                    <th class="text-end">Дія</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model.Hotels)
+                {
+                    <tr>
+                        <td class="small"><code>@h.HotelCode</code></td>
+                        <td>
+                            <div class="fw-semibold">@h.Name</div>
+                            <div class="small text-warning">@(new string('★', h.StarRating))</div>
+                        </td>
+                        <td class="small">@h.City, @h.Address</td>
+                        <td class="small">@h.Phone<div class="text-muted">@h.Email</div></td>
+                        <td>
+                            <span class="badge @(h.IsActive ? "bg-success" : "bg-secondary")">
+                                @(h.IsActive ? "Активний" : "Неактивний")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="ToggleHotelActive" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@h.Id" />
+                                <input type="hidden" name="isActive" value="@(!h.IsActive ? "true" : "false")" />
+                                <button type="submit" class="btn btn-sm @(h.IsActive ? "btn-outline-danger" : "btn-outline-success")">
+                                    @(h.IsActive ? "Деактивувати" : "Активувати")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white fw-semibold">Номери (@Model.Rooms.Count)</div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Готель</th>
+                    <th>Номер</th>
+                    <th>Категорія</th>
+                    <th>Ціна/ніч</th>
+                    <th>Статус</th>
+                    <th class="text-end">Зміна статусу</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rooms)
+                {
+                    <tr>
+                        <td class="small">@r.HotelName (@r.City)</td>
+                        <td class="fw-semibold">№@r.RoomNumber <span class="text-muted small">(пов. @r.Floor)</span></td>
+                        <td class="small">@r.CategoryName (до @r.MaxGuests г.)</td>
+                        <td class="small">@r.BasePrice.ToString("N0") грн</td>
+                        <td><span class="badge status-badge status-@r.RoomStatus">@r.RoomStatus</span></td>
+                        <td class="text-end">
+                            <form asp-action="UpdateRoomStatus" method="post" class="d-inline-flex gap-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="roomId" value="@r.RoomId" />
+                                <select name="status" class="form-select form-select-sm" style="width: auto;">
+                                    @foreach (var st in roomStatuses)
+                                    {
+                                        <option value="@st" selected="@(r.RoomStatus == st)">@st</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-outline-primary btn-sm">OK</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

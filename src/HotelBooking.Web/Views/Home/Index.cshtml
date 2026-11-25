@@ -1,0 +1,113 @@
+﻿@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Пошук готельних номерів";
+}
+
+<section class="hero-banner rounded-4 p-4 p-md-5 mb-5 text-white">
+    <h1 class="display-6 fw-bold mb-2">Знайдіть ідеальний номер в Україні</h1>
+    <p class="mb-4 opacity-75">Перевірка доступності в реальному часі через PostgreSQL із захистом від подвійного бронювання.</p>
+
+    <form id="availabilitySearchForm" asp-controller="Home" asp-action="Index" method="get" class="row g-2 bg-white text-dark p-3 rounded-3 shadow">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold mb-1">Місто</label>
+            <select name="city" id="searchCity" class="form-select">
+                <option value="">Усі міста</option>
+                @foreach (var c in Model.Cities)
+                {
+                    <option value="@c" selected="@(Model.SelectedCity == c)">@c</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold mb-1">Заїзд</label>
+            <input type="date" name="checkIn" id="searchCheckIn" class="form-control" value="@Model.CheckIn.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold mb-1">Виїзд</label>
+            <input type="date" name="checkOut" id="searchCheckOut" class="form-control" value="@Model.CheckOut.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label small fw-semibold mb-1">Гостей</label>
+            <input type="number" name="guests" id="searchGuests" class="form-control" min="1" max="12" value="@Model.Guests" required />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">Знайти</button>
+        </div>
+    </form>
+</section>
+
+<div id="liveSearchContainer" class="mb-5 @(Model.SearchResults is null ? "d-none" : "")">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Вільні номери на обрані дати</h3>
+        <span id="liveSearchStatus" class="text-muted small"></span>
+    </div>
+    <div id="liveSearchGrid" class="row g-3">
+        @if (Model.SearchResults is not null)
+        {
+            if (Model.SearchResults.Count == 0)
+            {
+                <div class="col-12">
+                    <div class="alert alert-warning mb-0">На обрані дати вільних номерів не знайдено. Спробуйте змінити дати або місто.</div>
+                </div>
+            }
+            else
+            {
+                foreach (var item in Model.SearchResults)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm room-card">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-primary-subtle text-primary">@item.City</span>
+                                    <span class="text-warning fw-bold">@(new string('★', item.StarRating))</span>
+                                </div>
+                                <h5 class="card-title mb-1">@item.HotelName</h5>
+                                <p class="text-muted small mb-2">Номер @item.RoomNumber · @item.CategoryName (до @item.MaxGuests гостей)</p>
+                                <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold fs-5 text-primary">@item.TotalStayPrice.ToString("N0") грн</div>
+                                        <div class="small text-muted">@item.BasePrice.ToString("N0") грн / ніч</div>
+                                    </div>
+                                    <a asp-controller="Hotels"
+                                       asp-action="Room"
+                                       asp-route-id="@item.RoomId"
+                                       asp-route-checkIn="@Model.CheckIn.ToString("yyyy-MM-dd")"
+                                       asp-route-checkOut="@Model.CheckOut.ToString("yyyy-MM-dd")"
+                                       asp-route-guests="@Model.Guests"
+                                       class="btn btn-outline-primary btn-sm">Обрати</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        }
+    </div>
+</div>
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Наші готелі</h3>
+        <a asp-controller="Hotels" asp-action="Index" class="btn btn-link text-decoration-none">Усі номери →</a>
+    </div>
+    <div class="row g-4">
+        @foreach (var hotel in Model.Hotels)
+        {
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm hotel-card">
+                    <div class="hotel-placeholder d-flex align-items-end p-3 text-white">
+                        <div>
+                            <span class="badge bg-dark bg-opacity-75 mb-1">@hotel.City</span>
+                            <div class="text-warning small">@(new string('★', hotel.StarRating))</div>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@hotel.Name</h5>
+                        <p class="card-text small text-muted flex-grow-1">@(hotel.Description ?? hotel.Address)</p>
+                        <a asp-controller="Hotels" asp-action="Details" asp-route-id="@hotel.Id" class="btn btn-primary btn-sm w-100">Переглянути номери</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,188 @@
+﻿@model AdminBookingsViewModel
+@{
+    ViewData["Title"] = "Рецепція — Керування бронюваннями";
+    var canOperate = User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("receptionist");
+    var statuses = new[] { "pending", "confirmed", "checked_in", "completed", "cancelled", "no_show" };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h2 class="mb-0">Рецепція: бронювання та заселення</h2>
+    <form asp-action="Bookings" method="get" class="d-flex flex-wrap gap-2">
+        <select name="hotelId" class="form-select form-select-sm" style="min-width: 190px;">
+            <option value="">Усі готелі</option>
+            @foreach (var h in Model.Hotels)
+            {
+                <option value="@h.Id" selected="@(Model.SelectedHotelId == h.Id)">@h.Name (@h.City)</option>
+            }
+        </select>
+        <select name="status" class="form-select form-select-sm" style="min-width: 150px;">
+            <option value="">Усі статуси</option>
+            @foreach (var st in statuses)
+            {
+                <option value="@st" selected="@(Model.SelectedStatus == st)">@st</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Фільтрувати</button>
+        <a asp-action="Bookings" class="btn btn-outline-secondary btn-sm">Скинути</a>
+    </form>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Код</th>
+                    <th>Гість</th>
+                    <th>Готель / Номер</th>
+                    <th>Дати</th>
+                    <th>Оплата</th>
+                    <th>Статус</th>
+                    <th class="text-end">Операції</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Bookings.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Бронювань за обраним фільтром не знайдено.</td></tr>
+                }
+                else
+                {
+                    foreach (var b in Model.Bookings)
+                    {
+                        <tr>
+                            <td class="small fw-semibold">
+                                <a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.BookingId" class="text-decoration-none">
+                                    @b.BookingCode
+                                </a>
+                            </td>
+                            <td class="small">
+                                <div class="fw-semibold">@b.GuestFullName</div>
+                                <div class="text-muted">@b.GuestPhone</div>
+                            </td>
+                            <td class="small">
+                                <div>@b.HotelName</div>
+                                <div class="text-muted">№@b.RoomNumber · @b.CategoryName</div>
+                            </td>
+                            <td class="small">
+                                @b.CheckInDate.ToString("dd.MM.yy") — @b.CheckOutDate.ToString("dd.MM.yy")
+                                <div class="text-muted">@b.NightsCount н. · @b.GuestsCount г.</div>
+                            </td>
+                            <td class="small">
+                                <div>@b.PaidAmount.ToString("N0") / @b.TotalPrice.ToString("N0") грн</div>
+                                @if (b.BalanceDue > 0 && b.Status is not ("cancelled" or "no_show"))
+                                {
+                                    <div class="text-danger">Борг: @b.BalanceDue.ToString("N0")</div>
+                                }
+                            </td>
+                            <td><span class="badge status-badge status-@b.Status">@b.Status</span></td>
+                            <td class="text-end">
+                                <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                                    <a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.BookingId" class="btn btn-outline-secondary btn-sm">Деталі</a>
+                                    @if (canOperate)
+                                    {
+                                        if (b.Status == "pending")
+                                        {
+                                            <form asp-action="ConfirmBooking" asp-route-id="@b.BookingId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-success btn-sm">Підтвердити</button>
+                                            </form>
+                                            <form asp-action="CancelBooking" asp-route-id="@b.BookingId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Скасувати</button>
+                                            </form>
+                                        }
+                                        else if (b.Status == "confirmed")
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-primary btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#checkInModal"
+                                                    data-booking-id="@b.BookingId"
+                                                    data-booking-code="@b.BookingCode">
+                                                Заселити
+                                            </button>
+                                            <form asp-action="MarkNoShow" asp-route-id="@b.BookingId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-warning btn-sm">Неявка</button>
+                                            </form>
+                                            <form asp-action="CancelBooking" asp-route-id="@b.BookingId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Скасувати</button>
+                                            </form>
+                                        }
+                                        else if (b.Status == "checked_in")
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-dark btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#checkOutModal"
+                                                    data-booking-id="@b.BookingId"
+                                                    data-booking-code="@b.BookingCode">
+                                                Виселити
+                                            </button>
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="checkInModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CheckIn" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BookingId" id="checkInBookingId" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Оформлення заселення <span id="checkInBookingCode" class="text-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Ключ-карта</label>
+                        <input type="text" name="RoomKeyCard" class="form-control" placeholder="KEY-101" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Примітка рецепції</label>
+                        <textarea name="Notes" class="form-control" rows="2" placeholder="Документи перевірено, видано 2 картки..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Підтвердити заселення</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="checkOutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CheckOut" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bookingId" id="checkOutBookingId" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Оформлення виселення <span id="checkOutBookingCode" class="text-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Примітка при виселенні</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Номер прийнято без зауважень..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="submit" class="btn btn-dark btn-sm">Підтвердити виселення</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

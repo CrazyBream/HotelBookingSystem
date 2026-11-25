@@ -1,0 +1,54 @@
+﻿@model HotelDetailsViewModel
+@{
+    ViewData["Title"] = Model.Hotel.Name;
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>
+                <span class="badge bg-primary-subtle text-primary mb-2">@Model.Hotel.City, @Model.Hotel.Country</span>
+                <h2 class="mb-1">@Model.Hotel.Name <span class="text-warning fs-4">@(new string('★', Model.Hotel.StarRating))</span></h2>
+                <p class="text-muted mb-2">@Model.Hotel.Address · @Model.Hotel.Phone · @Model.Hotel.Email</p>
+            </div>
+            <div class="text-end">
+                <span class="badge @(Model.Hotel.IsActive ? "bg-success" : "bg-secondary")">
+                    @(Model.Hotel.IsActive ? "Активний" : "Неактивний")
+                </span>
+            </div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.Hotel.Description))
+        {
+            <p class="mb-0 mt-2">@Model.Hotel.Description</p>
+        }
+    </div>
+</div>
+
+<h4 class="mb-3">Номери готелю (@Model.Rooms.Count)</h4>
+<div class="row g-3">
+    @foreach (var room in Model.Rooms)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Номер @room.RoomNumber</h5>
+                        <span class="badge status-badge status-@room.RoomStatus">@room.RoomStatus</span>
+                    </div>
+                    <p class="text-muted small mb-2">@room.CategoryName · Поверх @room.Floor · @room.AreaSqm м² · до @room.MaxGuests гостей</p>
+                    <p class="small flex-grow-1">@room.RoomDescription</p>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        @foreach (var a in room.Amenities)
+                        {
+                            <span class="badge bg-light text-dark border">@a</span>
+                        }
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <strong>@room.BasePrice.ToString("N0") грн/ніч</strong>
+                        <a asp-action="Room" asp-route-id="@room.RoomId" class="btn btn-primary btn-sm">Забронювати</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

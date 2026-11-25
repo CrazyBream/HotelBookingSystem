@@ -1,0 +1,102 @@
+﻿@model ProfileViewModel
+@{
+    ViewData["Title"] = "Особистий кабінет";
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Мої дані</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">Email: <strong>@Model.Email</strong></p>
+                <form asp-action="UpdateProfile" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label asp-for="Profile.FirstName" class="form-label small">Ім'я</label>
+                        <input asp-for="Profile.FirstName" class="form-control form-control-sm" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Profile.LastName" class="form-label small">Прізвище</label>
+                        <input asp-for="Profile.LastName" class="form-control form-control-sm" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Profile.Phone" class="form-label small">Телефон</label>
+                        <input asp-for="Profile.Phone" class="form-control form-control-sm" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Profile.DocumentType" class="form-label small">Тип документа</label>
+                        <select asp-for="Profile.DocumentType" class="form-select form-select-sm">
+                            <option value="">Не вказано</option>
+                            <option value="passport">Паспорт</option>
+                            <option value="id_card">ID-картка</option>
+                            <option value="driver_license">Посвідчення водія</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Profile.DocumentNumber" class="form-label small">Номер документа</label>
+                        <input asp-for="Profile.DocumentNumber" class="form-control form-control-sm" />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Зберегти зміни</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Історія моїх бронювань (@Model.Bookings.Count)</h5>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary btn-sm">Нове бронювання</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Код</th>
+                            <th>Готель / Номер</th>
+                            <th>Дати</th>
+                            <th>Сума / Борг</th>
+                            <th>Статус</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Bookings.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">У вас ще немає бронювань.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var b in Model.Bookings)
+                            {
+                                <tr>
+                                    <td class="fw-semibold small">@b.BookingCode</td>
+                                    <td>
+                                        <div>@b.HotelName</div>
+                                        <div class="small text-muted">№@b.RoomNumber · @b.CategoryName</div>
+                                    </td>
+                                    <td class="small">@b.CheckInDate.ToString("dd.MM.yyyy") — @b.CheckOutDate.ToString("dd.MM.yyyy")</td>
+                                    <td class="small">
+                                        <div>@b.TotalPrice.ToString("N0") грн</div>
+                                        @if (b.BalanceDue > 0 && b.Status is not ("cancelled" or "no_show"))
+                                        {
+                                            <div class="text-danger">До сплати: @b.BalanceDue.ToString("N0") грн</div>
+                                        }
+                                    </td>
+                                    <td><span class="badge status-badge status-@b.Status">@b.Status</span></td>
+                                    <td class="text-end">
+                                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.BookingId" class="btn btn-outline-secondary btn-sm">Деталі</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

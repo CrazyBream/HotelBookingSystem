@@ -1,0 +1,118 @@
+﻿@model RoomDetailsViewModel
+@{
+    ViewData["Title"] = $"{Model.Room.HotelName} — Номер {Model.Room.RoomNumber}";
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary-subtle text-primary">@Model.Room.City · @(new string('★', Model.Room.StarRating))</span>
+                    <span class="badge status-badge status-@Model.Room.RoomStatus">@Model.Room.RoomStatus</span>
+                </div>
+                <h2 class="mb-1">@Model.Room.HotelName</h2>
+                <h5 class="text-muted mb-3">Номер @Model.Room.RoomNumber — @Model.Room.CategoryName</h5>
+
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Макс. гостей</div>
+                            <div class="fw-bold">@Model.Room.MaxGuests</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Площа</div>
+                            <div class="fw-bold">@Model.Room.AreaSqm м²</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Поверх</div>
+                            <div class="fw-bold">@Model.Room.Floor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p>@(Model.Room.RoomDescription ?? "Комфортний номер для відпочинку та ділових поїздок.")</p>
+                <p class="text-muted small mb-3">Адреса: @Model.Room.Address</p>
+
+                <h6>Зручності:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    @if (Model.Room.Amenities.Length == 0)
+                    {
+                        <span class="text-muted small">Стандартна комплектація</span>
+                    }
+                    else
+                    {
+                        foreach (var a in Model.Room.Amenities)
+                        {
+                            <span class="badge bg-light text-dark border px-3 py-2">@a</span>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Оформлення бронювання</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <span class="fs-4 fw-bold text-primary">@Model.Room.BasePrice.ToString("N0") грн</span>
+                    <span class="text-muted">/ ніч</span>
+                </div>
+
+                <form id="bookingForm" asp-controller="Bookings" asp-action="Create" method="post" data-room-id="@Model.Room.RoomId">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="RoomId" value="@Model.Room.RoomId" />
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Дата заїзду</label>
+                            <input type="date" id="bookingCheckIn" name="CheckInDate" class="form-control" value="@Model.CheckIn.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Дата виїзду</label>
+                            <input type="date" id="bookingCheckOut" name="CheckOutDate" class="form-control" value="@Model.CheckOut.ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Кількість гостей (до @Model.Room.MaxGuests)</label>
+                        <input type="number" name="GuestsCount" class="form-control" min="1" max="@Model.Room.MaxGuests" value="@Math.Min(Model.GuestsCount, Model.Room.MaxGuests)" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Особливі побажання</label>
+                        <textarea name="SpecialRequests" class="form-control" rows="2" placeholder="Ранній заїзд, два окремі ліжка..."></textarea>
+                    </div>
+
+                    <div class="p-3 bg-light rounded mb-3 d-flex justify-content-between align-items-center">
+                        <span class="small text-muted" id="priceCalculationMeta">Орієнтовна вартість:</span>
+                        <span class="fs-5 fw-bold text-primary" id="priceCalculationValue">@Model.EstimatedPrice.ToString("N2") грн</span>
+                    </div>
+
+                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("guest"))
+                    {
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Забронювати номер</button>
+                    }
+                    else if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="alert alert-info small mb-0">Ви увійшли як персонал. Створення клієнтського бронювання доступне з акаунта гостя.</div>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn btn-primary w-100 py-2">
+                            Увійдіть, щоб забронювати
+                        </a>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

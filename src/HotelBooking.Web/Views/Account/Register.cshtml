@@ -1,0 +1,75 @@
+﻿@model RegisterDto
+@{
+    ViewData["Title"] = "Реєстрація гостя";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="mb-3 text-center">Реєстрація гостя</h3>
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="FirstName" class="form-label">Ім'я</label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="LastName" class="form-label">Прізвище</label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Phone" class="form-label">Телефон</label>
+                            <input asp-for="Phone" class="form-control" placeholder="+380..." />
+                            <span asp-validation-for="Phone" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="DocumentType" class="form-label">Тип документа (необов’язково)</label>
+                            <select asp-for="DocumentType" class="form-select">
+                                <option value="">Не вказано</option>
+                                <option value="passport">Паспорт</option>
+                                <option value="id_card">ID-картка</option>
+                                <option value="driver_license">Посвідчення водія</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DocumentNumber" class="form-label">Номер документа</label>
+                            <input asp-for="DocumentNumber" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label">Пароль</label>
+                            <input asp-for="Password" type="password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label">Підтвердження пароля</label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">Зареєструватися</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

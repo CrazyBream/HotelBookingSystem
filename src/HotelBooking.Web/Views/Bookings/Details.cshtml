@@ -1,0 +1,162 @@
+﻿@using System.Globalization
+@model BookingDetailsViewModel
+@{
+    ViewData["Title"] = $"Бронювання {Model.Booking.BookingCode}";
+    var b = Model.Booking;
+    var balanceInput = b.BalanceDue.ToString("F2", CultureInfo.InvariantCulture);
+    var canPay = User.IsInRole("guest") || User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("receptionist");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">Бронювання @b.BookingCode</h2>
+        <span class="badge status-badge status-@b.Status mt-1">@b.Status</span>
+    </div>
+    <a asp-controller="@(User.IsStaffUser() ? "Admin" : "Bookings")"
+       asp-action="@(User.IsStaffUser() ? "Bookings" : "Index")"
+       class="btn btn-outline-secondary btn-sm">← Назад до списку</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-semibold">Інформація про проживання</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Готель</dt>
+                    <dd class="col-sm-8">@b.HotelName (@b.HotelCity)</dd>
+
+                    <dt class="col-sm-4">Номер</dt>
+                    <dd class="col-sm-8">№@b.RoomNumber — @b.CategoryName</dd>
+
+                    <dt class="col-sm-4">Гість</dt>
+                    <dd class="col-sm-8">@b.GuestFullName (@b.GuestEmail, @b.GuestPhone)</dd>
+
+                    <dt class="col-sm-4">Період</dt>
+                    <dd class="col-sm-8">@b.CheckInDate.ToString("dd.MM.yyyy") — @b.CheckOutDate.ToString("dd.MM.yyyy") (@b.NightsCount ночей, @b.GuestsCount гостей)</dd>
+
+                    @if (b.ActualCheckIn.HasValue)
+                    {
+                        <dt class="col-sm-4">Фактичний заїзд</dt>
+                        <dd class="col-sm-8">@b.ActualCheckIn.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+                    }
+                    @if (b.ActualCheckOut.HasValue)
+                    {
+                        <dt class="col-sm-4">Фактичний виїзд</dt>
+                        <dd class="col-sm-8">@b.ActualCheckOut.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Історія платежів</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Тип</th>
+                            <th>Спосіб</th>
+                            <th>Сума</th>
+                            <th>Статус</th>
+                            <th>Референс</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Payments.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-3">Платежів ще немає.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var p in Model.Payments)
+                            {
+                                <tr>
+                                    <td class="small">@p.PaidAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@p.PaymentType</td>
+                                    <td>@p.PaymentMethod</td>
+                                    <td class="fw-semibold">@p.Amount.ToString("N2") грн</td>
+                                    <td><span class="badge bg-secondary">@p.Status</span></td>
+                                    <td class="small text-muted">@p.TransactionRef</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-semibold">Фінансовий підсумок</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Загальна вартість:</span>
+                    <strong>@b.TotalPrice.ToString("N2") грн</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Сплачено:</span>
+                    <strong class="text-success">@b.PaidAmount.ToString("N2") грн</strong>
+                </div>
+                <hr />
+                <div class="d-flex justify-content-between fs-5">
+                    <span>Залишок до оплати:</span>
+                    <strong class="@(b.BalanceDue > 0 ? "text-danger" : "text-success")">@b.BalanceDue.ToString("N2") грн</strong>
+                </div>
+
+                @if (canPay && b.BalanceDue > 0 && b.Status is "pending" or "confirmed" or "checked_in")
+                {
+                    <hr />
+                    <form asp-action="Pay" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="BookingId" value="@b.BookingId" />
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Сума оплати (грн)</label>
+                            <input type="number"
+                                   step="0.01"
+                                   min="0.01"
+                                   max="@balanceInput"
+                                   name="Amount"
+                                   class="form-control"
+                                   value="@balanceInput"
+                                   required />
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Спосіб</label>
+                                <select name="PaymentMethod" class="form-select form-select-sm">
+                                    <option value="online">Онлайн</option>
+                                    <option value="card">Карткою</option>
+                                    <option value="bank_transfer">Переказ</option>
+                                    @if (User.IsStaffUser())
+                                    {
+                                        <option value="cash">Готівка</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Тип</label>
+                                <select name="PaymentType" class="form-select form-select-sm">
+                                    <option value="final">Повна / доплата</option>
+                                    <option value="prepayment">Передоплата</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Провести оплату</button>
+                    </form>
+                }
+
+                @if (User.IsInRole("guest") && b.Status is "pending" or "confirmed")
+                {
+                    <hr />
+                    <form asp-action="Cancel" asp-route-id="@b.BookingId" method="post" onsubmit="return confirm('Скасувати це бронювання?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">Скасувати бронювання</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

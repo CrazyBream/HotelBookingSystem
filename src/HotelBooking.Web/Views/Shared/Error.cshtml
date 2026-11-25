@@ -1,0 +1,16 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Помилка";
+}
+
+<div class="card border-danger shadow-sm mx-auto" style="max-width: 640px;">
+    <div class="card-body p-4 text-center">
+        <h2 class="text-danger mb-3">Не вдалося виконати запит</h2>
+        <p class="lead">@(ViewBag.ErrorMessage ?? "Виникла непередбачена помилка під час обробки запиту.")</p>
+        @if (Model.ShowRequestId)
+        {
+            <p class="text-muted small">Request ID: <code>@Model.RequestId</code></p>
+        }
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-2">На головну</a>
+    </div>
+</div>
